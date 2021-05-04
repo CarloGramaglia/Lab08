@@ -7,7 +7,10 @@ package it.polito.tdp.extflightdelays;
 import java.net.URL;
 import java.util.ResourceBundle;
 
+import org.jgrapht.graph.DefaultWeightedEdge;
+
 import it.polito.tdp.extflightdelays.model.Model;
+import it.polito.tdp.extflightdelays.model.Rotta;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -35,7 +38,29 @@ public class FXMLController {
 
     @FXML
     void doAnalizzaAeroporti(ActionEvent event) {
-    	//TODO
+    	this.txtResult.clear();
+    	
+    	double media = 0;
+    	try {
+    		media = Double.parseDouble(this.distanzaMinima.getText());
+    	}catch(NumberFormatException nfe) {
+    		this.txtResult.setText("Inserire un numero!!");
+    		return;
+    	}
+    	
+    	model.creaGrafo(media);
+    	
+    	this.txtResult.appendText("Ci sono "+model.contaVertici()+" vertici!"+"\n");
+    	this.txtResult.appendText("Ci sono "+model.contaArchi()+" archi!"+"\n");
+    	
+    	StringBuilder sb = new StringBuilder();
+    	for(Rotta r: model.stampaListaArchi()) {
+    		sb.append(String.format("%-70s", r.getAirportOrigin().getAirportName()));
+    		sb.append(String.format("%-70s", r.getAirportDestination().getAirportName()));
+    		sb.append(String.format("%-1f\n", r.getDistance()));
+    	}
+    	
+    	this.txtResult.appendText("Lista archi: \n"+sb.toString());
     }
 
     @FXML // This method is called by the FXMLLoader when initialization is complete
@@ -44,8 +69,9 @@ public class FXMLController {
         assert distanzaMinima != null : "fx:id=\"distanzaMinima\" was not injected: check your FXML file 'Scene.fxml'.";
         assert btnAnalizza != null : "fx:id=\"btnAnalizza\" was not injected: check your FXML file 'Scene.fxml'.";
     }
-    
+
     public void setModel(Model model) {
     	this.model = model;
+    	this.txtResult.setStyle("-fx-font-family: monospace");
     }
 }

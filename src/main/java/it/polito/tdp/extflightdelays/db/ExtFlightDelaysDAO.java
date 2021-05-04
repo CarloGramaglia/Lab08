@@ -7,10 +7,12 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import it.polito.tdp.extflightdelays.model.Airline;
 import it.polito.tdp.extflightdelays.model.Airport;
 import it.polito.tdp.extflightdelays.model.Flight;
+import it.polito.tdp.extflightdelays.model.Rotta;
 
 public class ExtFlightDelaysDAO {
 
@@ -37,9 +39,8 @@ public class ExtFlightDelaysDAO {
 		}
 	}
 
-	public List<Airport> loadAllAirports() {
+	public void loadAllAirports(Map<Integer,Airport> idMap) {
 		String sql = "SELECT * FROM airports";
-		List<Airport> result = new ArrayList<Airport>();
 
 		try {
 			Connection conn = ConnectDB.getConnection();
@@ -50,11 +51,10 @@ public class ExtFlightDelaysDAO {
 				Airport airport = new Airport(rs.getInt("ID"), rs.getString("IATA_CODE"), rs.getString("AIRPORT"),
 						rs.getString("CITY"), rs.getString("STATE"), rs.getString("COUNTRY"), rs.getDouble("LATITUDE"),
 						rs.getDouble("LONGITUDE"), rs.getDouble("TIMEZONE_OFFSET"));
-				result.add(airport);
+				idMap.put(airport.getId(), airport);
 			}
 
 			conn.close();
-			return result;
 
 		} catch (SQLException e) {
 			e.printStackTrace();
@@ -89,6 +89,32 @@ public class ExtFlightDelaysDAO {
 			e.printStackTrace();
 			System.out.println("Errore connessione al database");
 			throw new RuntimeException("Error Connection Database");
+		}
+	}
+	
+	public List<Rotta> getRotte(double media, Map<Integer,Airport> idMap ) {
+		String sql = "SELECT ORIGIN_AIRPORT_ID AS id1, DESTINATION_AIRPORT_ID AS id2, AVG(DISTANCE) AS media "
+				+ "FROM flights "
+				+ "GROUP BY ORIGIN_AIRPORT_ID, DESTINATION_AIRPORT_ID "
+				+ "HAVING media > ? ";
+		
+		Connection conn = ConnectDB.getConnection();
+		
+		List<Rotta> result = new ArrayList<Rotta>();
+		try {
+			PreparedStatement st = conn.prepareStatement(sql);
+			st.setDouble(1, media);
+			ResultSet res = st.executeQuery();
+			
+			while(res.next()) {
+				result.add(new Rotta(idMap.get(res.getInt("id1")),idMap.get(res.getInt("id2")),res.getDouble("media")));
+			}
+			
+			conn.close();
+			return result;
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return null;
 		}
 	}
 }
